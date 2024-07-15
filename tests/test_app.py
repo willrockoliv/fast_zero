@@ -57,6 +57,17 @@ def test_read_users(client):
     }
 
 
+def test_read_users_by_id(client):
+    response = client.get('/users/1')
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'luana',
+        'email': 'luana@example.com',
+        'id': 1,
+    }
+
+
 def test_update_user(client):
     response = client.put(
         '/users/1',
@@ -74,8 +85,25 @@ def test_update_user(client):
     }
 
 
+def test_update_user_not_found(client):
+    response = client.put(
+        '/users/9999',
+        json={
+            'username': 'luana',
+            'email': 'luana@example.com',
+            'password': 'mynewpassword',
+        },
+    )
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+
 def test_delete_user(client):
     response = client.delete('/users/1')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}
+
+
+def test_delete_user_not_found(client):
+    response = client.delete('/users/999')
+    assert response.status_code == HTTPStatus.NOT_FOUND
