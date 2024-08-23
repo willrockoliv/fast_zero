@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
@@ -11,7 +11,7 @@ from fast_zero.models import User, table_registry
 
 @pytest.fixture()
 def client(session):
-    def get_session_override(session):
+    def get_session_override():
         return session
 
     with TestClient(app) as client:
@@ -37,10 +37,18 @@ def session():
 
 
 @pytest.fixture()
-def user(session):
+def user(session: Session):
     user = User(username='Test', email='test@test.com', password='test123')
+
     session.add(user)
     session.commit()
     session.refresh(user)
 
-    return user
+    db_user: User = session.scalar(
+        select(User).where(
+            (User.username == user.username) | (User.email == user.email)
+        )
+    )
+    assert db_user is not None
+
+    return db_user

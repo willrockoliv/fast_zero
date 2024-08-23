@@ -31,14 +31,6 @@ def read_html():
     """
 
 
-@app.get('/users/', response_model=UserList)
-def read_users(
-    skip: int = 0, limit: int = 100, session: Session = Depends(get_session)
-):
-    users = session.scalar(select(User).offset(skip).limit(limit)).all()
-    return {'users': users}
-
-
 @app.get('/users/{user_id}', response_model=UserPublic)
 def read_users_by_id(user_id: int, session: Session = Depends(get_session)):
     user = session.scalar(select(User).where(User.id == user_id))
@@ -74,11 +66,20 @@ def create_user(user: UserSchema, session: Session = Depends(get_session)):
     db_user = User(
         username=user.username, password=user.password, email=user.email
     )
+
     session.add(db_user)
     session.commit()
     session.refresh(db_user)
 
     return db_user
+
+
+@app.get('/users/', response_model=UserList)
+def read_users(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_session)
+):
+    users = session.scalars(select(User).offset(skip).limit(limit)).all()
+    return {'users': users}
 
 
 @app.put('/users/{user_id}', response_model=UserPublic)

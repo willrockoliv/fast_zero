@@ -14,6 +14,12 @@ def test_create_user(session: Session):
     session.add(user)
     session.commit()
 
-    session.scalar(select(User).where(User.email == 'willrockoliv@github.com'))
-
-    assert user.username == 'willrockoliv'
+    db_user = session.scalar(
+        select(User).where(
+            (User.username == user.username) | (User.email == user.email)
+        )
+    )
+    assert db_user is not None
+    assert db_user.username == user.username
+    assert db_user.email == user.email
+    assert db_user.password == user.password
