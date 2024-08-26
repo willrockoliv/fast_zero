@@ -3,6 +3,7 @@
 
 database.db
 poetry.lock
+.vscode
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
