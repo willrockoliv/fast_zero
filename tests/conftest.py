@@ -1,3 +1,4 @@
+import factory
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
@@ -8,6 +9,19 @@ from fast_zero.app import app
 from fast_zero.database import get_session
 from fast_zero.models import User, table_registry
 from fast_zero.security import get_password_hash
+
+
+class UserFactory(factory.Factory):
+    class Meta:
+        model = User
+
+    username = factory.Sequence(lambda n: f'test{n}')
+    email = factory.LazyAttribute(
+        lambda meta_model: f'{meta_model.username}@test.com'
+    )
+    password = factory.LazyAttribute(
+        lambda meta_model: f'{meta_model.username}+senha'
+    )
 
 
 @pytest.fixture()
@@ -41,11 +55,7 @@ def session():
 def user(session: Session):
     pwd = 'test_password_123'
 
-    user = User(
-        username='Test',
-        email='test@test.com',
-        password=get_password_hash(pwd),
-    )
+    user = UserFactory(password=get_password_hash(pwd))
 
     session.add(user)
     session.commit()
@@ -59,6 +69,23 @@ def user(session: Session):
     assert db_user is not None
 
     db_user.clean_password = pwd  # Mokey Patch
+
+    return db_user
+
+
+@pytest.fixture()
+def other_user(session: Session):
+    user = UserFactory()
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    db_user: User = session.scalar(
+        select(User).where(
+            (User.username == user.username) | (User.email == user.email)
+        )
+    )
+    assert db_user is not None
 
     return db_user
 
